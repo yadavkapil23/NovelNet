@@ -5,13 +5,15 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from books.views import user_profile
+from books.views import user_profile, logout_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('books.urls')),
     path('reviews/', include('reviews.urls')),
     path('clubs/', include('clubs.urls')),
+    # Override default logout to allow GET as used by navbar
+    path('accounts/logout/', logout_view, name='logout'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/profile/', user_profile, name='profile'),
 ]
