@@ -119,7 +119,7 @@ src/
 public/
 components.json
 eslint.config.js
-index.html
+# index.html
 package.json
 package-lock.json
 postcss.config.js
