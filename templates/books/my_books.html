@@ -21,8 +21,10 @@
         <div class="col-md-3 col-sm-6">
             <div class="card h-100">
                 <div class="book-card">
-                    {% if book.cover_image_url %}
-                        <img src="{{ book.cover_image_url }}" alt="{{ book.title }}" class="img-fluid">
+                    {% if book.cover_image %}
+                        <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="img-fluid">
+                    {% elif book.thumbnail_url %}
+                        <img src="{{ book.thumbnail_url }}" alt="{{ book.title }}" class="img-fluid">
                     {% else %}
                         <div class="d-flex align-items-center justify-content-center h-100 bg-muted">
                             <i class="fas fa-book fa-3x text-muted"></i>
