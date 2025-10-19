@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ discussion.title }} - {{ club.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Discussion Header -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h2 class="card-title mb-2">{{ discussion.title }}</h2>
+                            <div class="mb-3">
+                                <span class="badge bg-primary me-2">{{ club.name }}</span>
+                                <span class="text-muted small">{{ discussion.created_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-muted small">Started by</div>
+                            <div class="fw-bold">{{ discussion.author.username }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{% if discussion.author.profile.avatar %}{{ discussion.author.profile.avatar.url }}{% else %}https://via.placeholder.com/40{% endif %}" 
+                             alt="{{ discussion.author.username }}" 
+                             class="rounded-circle me-3" 
+                             width="40" 
+                             height="40">
+                        <div>
+                            <div class="fw-bold">{{ discussion.author.username }}</div>
+                            <div class="text-muted small">{{ discussion.created_at|date:"M d, Y" }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="discussion-content">
+                        {{ discussion.content|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Comments Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Comments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No comments yet</h6>
+                        <p class="text-muted small">Be the first to comment on this discussion!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Club Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Club Information</h6>
+                </div>
+                <div class="card-body">
+                    <h6>{{ club.name }}</h6>
+                    <p class="text-muted small">{{ club.description|truncatechars:100 }}</p>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-primary me-2">{{ club.genre }}</span>
+                        <span class="badge bg-secondary">{{ club.meeting_frequency }}</span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between text-muted small mb-3">
+                        <span><i class="fas fa-users me-1"></i>{{ club.members.count }} members</span>
+                        <span><i class="fas fa-comments me-1"></i>{{ club.discussions.count }} discussions</span>
+                    </div>
+                    
+                    <a href="{% url 'club_detail' club.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Back to Club
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Discussion Actions -->
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">Discussion Actions</h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="showToast('Comment functionality coming soon!', 'info')">
+                            <i class="fas fa-comment me-1"></i>
+                            Add Comment
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="showToast('Share functionality coming soon!', 'info')">
+                            <i class="fas fa-share me-1"></i>
+                            Share Discussion
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

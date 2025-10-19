@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+
+{% block title %}My Bookshelves - Novel Net{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex align-items-center mb-5">
+        <div class="feature-icon primary me-3">
+            <i class="fas fa-bookmark fa-2x"></i>
+        </div>
+        <div>
+            <h1 class="display-4 fw-bold mb-2">My Bookshelves</h1>
+            <p class="text-muted">Organize and track your reading journey</p>
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+    <!-- Shelf Tabs -->
+    <ul class="nav nav-pills shelf-tabs mb-4" id="shelfTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="currently-reading-tab" data-bs-toggle="pill" data-bs-target="#currently-reading" type="button" role="tab">
+                <i class="fas fa-book-open me-2"></i>
+                Currently Reading
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="want-to-read-tab" data-bs-toggle="pill" data-bs-target="#want-to-read" type="button" role="tab">
+                <i class="fas fa-bookmark me-2"></i>
+                Want to Read
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="read-tab" data-bs-toggle="pill" data-bs-target="#read" type="button" role="tab">
+                <i class="fas fa-check me-2"></i>
+                Finished
+            </button>
+        </li>
+    </ul>
+
+    <!-- Shelf Content -->
+    <div class="tab-content" id="shelfTabsContent">
+        <!-- Currently Reading -->
+        <div class="tab-pane fade show active" id="currently-reading" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Currently Reading</h5>
+                    <p class="card-text text-muted">Books you're actively reading</p>
+                </div>
+                <div class="card-body">
+                    {% if shelves.currently_reading %}
+                        <div class="row g-4">
+                            {% for shelf_entry in shelves.currently_reading %}
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card h-100">
+                                    <div class="book-card">
+                                        {% if shelf_entry.book.cover_image_url %}
+                                            <img src="{{ shelf_entry.book.cover_image_url }}" alt="{{ shelf_entry.book.title }}" class="img-fluid">
+                                        {% else %}
+                                            <div class="d-flex align-items-center justify-content-center h-100 bg-muted">
+                                                <i class="fas fa-book fa-3x text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ shelf_entry.book.title|truncatechars:30 }}</h6>
+                                        <p class="card-text text-muted small">{{ shelf_entry.book.author_names|truncatechars:25 }}</p>
+                                        {% if shelf_entry.book.average_rating %}
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="star-rating">
+                                                    {% for i in "12345" %}
+                                                        <i class="fas fa-star {% if forloop.counter <= shelf_entry.book.average_rating %}active{% endif %}"></i>
+                                                    {% endfor %}
+                                                </div>
+                                                <span class="ms-2 small text-muted">{{ shelf_entry.book.average_rating }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-footer bg-transparent">
+                                        <div class="d-flex gap-2">
+                                            <a href="{% url 'book_detail' shelf_entry.book.id %}" class="btn btn-sm btn-outline-primary flex-fill">
+                                                <i class="fas fa-eye me-1"></i>
+                                                View
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="removeFromShelf('{{ shelf_entry.book.id }}', 'currently-reading')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-book-open fa-4x text-muted mb-4"></i>
+                            <h5 class="text-muted mb-2">No books in this shelf yet</h5>
+                            <p class="text-muted">Start by searching for books and adding them to your shelves</p>
+                            <a href="{% url 'book_search' %}" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>
+                                Search Books
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Want to Read -->
+        <div class="tab-pane fade" id="want-to-read" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Want to Read</h5>
+                    <p class="card-text text-muted">Books on your to-read list</p>
+                </div>
+                <div class="card-body">
+                    {% if shelves.want_to_read %}
+                        <div class="row g-4">
+                            {% for shelf_entry in shelves.want_to_read %}
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card h-100">
+                                    <div class="book-card">
+                                        {% if shelf_entry.book.cover_image_url %}
+                                            <img src="{{ shelf_entry.book.cover_image_url }}" alt="{{ shelf_entry.book.title }}" class="img-fluid">
+                                        {% else %}
+                                            <div class="d-flex align-items-center justify-content-center h-100 bg-muted">
+                                                <i class="fas fa-book fa-3x text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ shelf_entry.book.title|truncatechars:30 }}</h6>
+                                        <p class="card-text text-muted small">{{ shelf_entry.book.author_names|truncatechars:25 }}</p>
+                                        {% if shelf_entry.book.average_rating %}
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="star-rating">
+                                                    {% for i in "12345" %}
+                                                        <i class="fas fa-star {% if forloop.counter <= shelf_entry.book.average_rating %}active{% endif %}"></i>
+                                                    {% endfor %}
+                                                </div>
+                                                <span class="ms-2 small text-muted">{{ shelf_entry.book.average_rating }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-footer bg-transparent">
+                                        <div class="d-flex gap-2">
+                                            <a href="{% url 'book_detail' shelf_entry.book.id %}" class="btn btn-sm btn-outline-primary flex-fill">
+                                                <i class="fas fa-eye me-1"></i>
+                                                View
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="removeFromShelf('{{ shelf_entry.book.id }}', 'want-to-read')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bookmark fa-4x text-muted mb-4"></i>
+                            <h5 class="text-muted mb-2">No books in this shelf yet</h5>
+                            <p class="text-muted">Start by searching for books and adding them to your shelves</p>
+                            <a href="{% url 'book_search' %}" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>
+                                Search Books
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Read -->
+        <div class="tab-pane fade" id="read" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Finished</h5>
+                    <p class="card-text text-muted">Books you've finished reading</p>
+                </div>
+                <div class="card-body">
+                    {% if shelves.read %}
+                        <div class="row g-4">
+                            {% for shelf_entry in shelves.read %}
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card h-100">
+                                    <div class="book-card">
+                                        {% if shelf_entry.book.cover_image_url %}
+                                            <img src="{{ shelf_entry.book.cover_image_url }}" alt="{{ shelf_entry.book.title }}" class="img-fluid">
+                                        {% else %}
+                                            <div class="d-flex align-items-center justify-content-center h-100 bg-muted">
+                                                <i class="fas fa-book fa-3x text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ shelf_entry.book.title|truncatechars:30 }}</h6>
+                                        <p class="card-text text-muted small">{{ shelf_entry.book.author_names|truncatechars:25 }}</p>
+                                        {% if shelf_entry.book.average_rating %}
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="star-rating">
+                                                    {% for i in "12345" %}
+                                                        <i class="fas fa-star {% if forloop.counter <= shelf_entry.book.average_rating %}active{% endif %}"></i>
+                                                    {% endfor %}
+                                                </div>
+                                                <span class="ms-2 small text-muted">{{ shelf_entry.book.average_rating }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-footer bg-transparent">
+                                        <div class="d-flex gap-2">
+                                            <a href="{% url 'book_detail' shelf_entry.book.id %}" class="btn btn-sm btn-outline-primary flex-fill">
+                                                <i class="fas fa-eye me-1"></i>
+                                                View
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="removeFromShelf('{{ shelf_entry.book.id }}', 'read')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-check fa-4x text-muted mb-4"></i>
+                            <h5 class="text-muted mb-2">No books in this shelf yet</h5>
+                            <p class="text-muted">Start by searching for books and adding them to your shelves</p>
+                            <a href="{% url 'book_search' %}" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>
+                                Search Books
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Not authenticated -->
+    <div class="text-center py-5">
+        <i class="fas fa-user-lock fa-4x text-muted mb-4"></i>
+        <h3 class="text-muted mb-3">Please Sign In</h3>
+        <p class="text-muted mb-4">You need to be signed in to view your bookshelves.</p>
+        <a href="{% url 'admin:login' %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-sign-in-alt me-2"></i>
+            Sign In
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function removeFromShelf(bookId, shelfType) {
+    if (!confirm('Are you sure you want to remove this book from your shelf?')) {
+        return;
+    }
+
+    fetch('{% url "add_to_shelf" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            book_id: bookId,
+            shelf_type: shelfType,
+            remove: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            location.reload();
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('An error occurred. Please try again.', 'error');
+    });
+}
+</script>
+{% endblock %}

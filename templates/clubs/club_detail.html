@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ club.name }} - Novel Net{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Club Header -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h2 class="card-title mb-2">{{ club.name }}</h2>
+                            <div class="mb-3">
+                                <span class="badge bg-primary me-2">{{ club.genre }}</span>
+                                <span class="badge bg-secondary">{{ club.meeting_frequency }}</span>
+                                {% if club.is_public %}
+                                    <span class="badge bg-success">Public</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Private</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-muted small">Created by</div>
+                            <div class="fw-bold">{{ club.created_by.username }}</div>
+                        </div>
+                    </div>
+                    
+                    <p class="card-text">{{ club.description }}</p>
+                    
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="fw-bold text-primary">{{ club.members.count }}</div>
+                            <div class="text-muted small">Members</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold text-primary">{{ club.discussions.count }}</div>
+                            <div class="text-muted small">Discussions</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold text-primary">{{ club.created_at|date:"M d" }}</div>
+                            <div class="text-muted small">Created</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Discussions -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Discussions</h5>
+                    {% if user.is_authenticated and user in club.members.all %}
+                    <a href="{% url 'create_discussion' club.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        New Discussion
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if discussions %}
+                        {% for discussion in discussions %}
+                        <div class="border-bottom pb-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-1">{{ discussion.title }}</h6>
+                                <small class="text-muted">{{ discussion.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            <p class="text-muted small mb-2">{{ discussion.content|truncatechars:150 }}</p>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <img src="{% if discussion.author.profile.avatar %}{{ discussion.author.profile.avatar.url }}{% else %}https://via.placeholder.com/30{% endif %}" 
+                                         alt="{{ discussion.author.username }}" 
+                                         class="rounded-circle me-2" 
+                                         width="30" 
+                                         height="30">
+                                    <span class="text-muted small">{{ discussion.author.username }}</span>
+                                </div>
+                                <a href="{% url 'discussion_detail' discussion.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-comments me-1"></i>
+                                    View Discussion
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No discussions yet</h6>
+                        <p class="text-muted small">Start the first discussion in this club!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Club Actions -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    {% if user.is_authenticated %}
+                        {% if user in club.members.all %}
+                            <div class="d-grid gap-2">
+                                <span class="btn btn-success">
+                                    <i class="fas fa-check me-2"></i>
+                                    You're a member
+                                </span>
+                                <a href="{% url 'leave_club' club.id %}" class="btn btn-outline-danger">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    Leave Club
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'join_club' club.id %}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Join Club
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center">
+                            <p class="text-muted mb-3">Sign in to join this club</p>
+                            <a href="{% url 'login' %}" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                Sign In
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Members -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Members ({{ club.members.count }})</h6>
+                </div>
+                <div class="card-body">
+                    {% for member in club.members.all|slice:":10" %}
+                    <div class="d-flex align-items-center mb-2">
+                        <img src="{% if member.profile.avatar %}{{ member.profile.avatar.url }}{% else %}https://via.placeholder.com/30{% endif %}" 
+                             alt="{{ member.username }}" 
+                             class="rounded-circle me-2" 
+                             width="30" 
+                             height="30">
+                        <span class="small">{{ member.username }}</span>
+                    </div>
+                    {% endfor %}
+                    {% if club.members.count > 10 %}
+                    <div class="text-muted small">... and {{ club.members.count|add:"-10" }} more</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

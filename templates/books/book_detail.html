@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ book.title }} - Novel Net{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Book Cover & Actions -->
+        <div class="col-lg-4 mb-4">
+            <div class="book-card mb-4">
+                {% if book.cover_image_url %}
+                    <img src="{{ book.cover_image_url }}" alt="{{ book.title }}" class="img-fluid">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center h-100 bg-muted">
+                        <i class="fas fa-book fa-4x text-muted"></i>
+                    </div>
+                {% endif %}
+            </div>
+            
+            {% if book.book_file %}
+            <div class="d-grid mb-3">
+                <a href="{% url 'download_book' book.id %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-download me-2"></i>
+                    Download Book
+                </a>
+            </div>
+            <div class="text-center text-muted small">
+                <i class="fas fa-download me-1"></i>
+                {{ book.download_count }} downloads
+            </div>
+            {% endif %}
+            
+            {% if user.is_authenticated %}
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary" onclick="addToShelf('{{ book.id }}', 'currently-reading')">
+                    <i class="fas fa-book-open me-2"></i>
+                    Currently Reading
+                </button>
+                <button class="btn btn-outline-secondary" onclick="addToShelf('{{ book.id }}', 'want-to-read')">
+                    <i class="fas fa-bookmark me-2"></i>
+                    Want to Read
+                </button>
+                <button class="btn btn-outline-primary" onclick="addToShelf('{{ book.id }}', 'read')">
+                    <i class="fas fa-check me-2"></i>
+                    Mark as Read
+                </button>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <a href="{% url 'admin:login' %}">Sign in</a> to add this book to your shelves.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Book Details -->
+        <div class="col-lg-8">
+            <div class="mb-4">
+                <h1 class="display-5 fw-bold mb-2">{{ book.title }}</h1>
+                {% if book.authors %}
+                    <p class="h5 text-muted mb-3">by {{ book.author_names }}</p>
+                {% endif %}
+                
+                <div class="d-flex flex-wrap gap-3 mb-3 text-muted">
+                    {% if book.published_date %}
+                        <span><i class="fas fa-calendar me-1"></i>Published: {{ book.published_date }}</span>
+                    {% endif %}
+                    {% if book.page_count %}
+                        <span><i class="fas fa-file-alt me-1"></i>{{ book.page_count }} pages</span>
+                    {% endif %}
+                    {% if book.average_rating %}
+                        <div class="d-flex align-items-center">
+                            <div class="star-rating me-2">
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star {% if forloop.counter <= book.average_rating %}active{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <span>{{ book.average_rating }} average rating</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if book.categories %}
+                    <div class="d-flex flex-wrap gap-2 mb-4">
+                        {% for category in book.categories %}
+                            <span class="badge bg-primary">{{ category }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if book.description %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">About this book</h5>
+                </div>
+                <div class="card-body">
+                    <div class="book-description">
+                        {{ book.description|safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Review Section -->
+            {% if user.is_authenticated %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Write a Review</h5>
+                </div>
+                <div class="card-body">
+                    {% if user_review %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            You've already reviewed this book. 
+                            <a href="#" onclick="editReview()">Edit your review</a>
+                        </div>
+                    {% else %}
+                        <form id="reviewForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Your Rating</label>
+                                <div class="star-rating" data-rating="0">
+                                    <input type="hidden" name="rating" value="0">
+                                    <i class="fas fa-star star" data-rating="1"></i>
+                                    <i class="fas fa-star star" data-rating="2"></i>
+                                    <i class="fas fa-star star" data-rating="3"></i>
+                                    <i class="fas fa-star star" data-rating="4"></i>
+                                    <i class="fas fa-star star" data-rating="5"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="review_text" class="form-label">Your Review</label>
+                                <textarea 
+                                    name="review_text" 
+                                    id="review_text" 
+                                    class="form-control" 
+                                    rows="5" 
+                                    placeholder="Share your thoughts about this book..."
+                                ></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                Submit Review
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Reviews Display -->
+            {% if reviews %}
+            <div class="mt-5">
+                <h4 class="mb-4">Reviews</h4>
+                <div class="row">
+                    {% for review in reviews %}
+                    <div class="col-12 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="card-title mb-1">{{ review.user.username }}</h6>
+                                        <div class="star-rating">
+                                            {% for i in "12345" %}
+                                                <i class="fas fa-star {% if forloop.counter <= review.rating %}active{% endif %}"></i>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                                </div>
+                                {% if review.review_text %}
+                                    <p class="card-text">{{ review.review_text }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addToShelf(bookId, shelfType) {
+    if (!{{ user.is_authenticated|yesno:"true,false" }}) {
+        showToast('Please sign in to add books to your shelves', 'warning');
+        return;
+    }
+
+    fetch('{% url "add_to_shelf" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            book_id: bookId,
+            shelf_type: shelfType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('An error occurred. Please try again.', 'error');
+    });
+}
+
+// Review form submission
+document.getElementById('reviewForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+            book_id: '{{ book.id }}',
+        rating: formData.get('rating'),
+        review_text: formData.get('review_text')
+    };
+
+    fetch('{% url "submit_review_ajax" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            location.reload();
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('An error occurred. Please try again.', 'error');
+    });
+});
+
+function editReview() {
+    // Implementation for editing review
+    showToast('Edit review functionality coming soon!', 'info');
+}
+</script>
+{% endblock %}

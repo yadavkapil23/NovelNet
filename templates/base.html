@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Novel Net - Your Literary Journey Starts Here{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --background: 36 40% 96%;
+            --foreground: 20 20% 15%;
+            --card: 0 0% 100%;
+            --card-foreground: 20 20% 15%;
+            --primary: 12 65% 35%;
+            --primary-foreground: 36 100% 98%;
+            --secondary: 140 20% 45%;
+            --secondary-foreground: 0 0% 100%;
+            --muted: 36 30% 88%;
+            --muted-foreground: 20 10% 45%;
+            --accent: 40 80% 60%;
+            --accent-foreground: 20 20% 15%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 36 25% 85%;
+            --input: 36 25% 85%;
+            --ring: 12 65% 35%;
+            --radius: 0.75rem;
+            --gradient-hero: linear-gradient(135deg, hsl(12 65% 35%), hsl(20 55% 45%));
+            --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(36 40% 98%));
+            --shadow-book: 0 10px 40px -10px hsl(12 65% 35% / 0.3);
+            --shadow-hover: 0 20px 50px -10px hsl(12 65% 35% / 0.4);
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .navbar {
+            background-color: hsl(var(--card));
+            border-bottom: 1px solid hsl(var(--border));
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .btn-primary {
+            background: var(--gradient-hero);
+            border: none;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, hsl(12 70% 40%), hsl(20 60% 50%));
+            transform: translateY(-1px);
+        }
+
+        .card {
+            background: var(--gradient-card);
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            box-shadow: 0 2px 10px -5px hsl(var(--primary) / 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .book-card {
+            aspect-ratio: 2/3;
+            overflow: hidden;
+            border-radius: var(--radius);
+        }
+
+        .book-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .book-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .rating-stars {
+            color: hsl(var(--accent));
+        }
+
+        .text-muted {
+            color: hsl(var(--muted-foreground)) !important;
+        }
+
+        .bg-muted {
+            background-color: hsl(var(--muted));
+        }
+
+        .border {
+            border-color: hsl(var(--border)) !important;
+        }
+
+        .form-control {
+            border-color: hsl(var(--input));
+            background-color: hsl(var(--card));
+            color: hsl(var(--foreground));
+        }
+
+        .form-control:focus {
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 0.2rem hsl(var(--ring) / 0.25);
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--muted)));
+            min-height: 60vh;
+        }
+
+        .feature-icon {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .feature-icon.primary {
+            background-color: hsl(var(--primary) / 0.1);
+            color: hsl(var(--primary));
+        }
+
+        .feature-icon.secondary {
+            background-color: hsl(var(--secondary) / 0.1);
+            color: hsl(var(--secondary));
+        }
+
+        .feature-icon.accent {
+            background-color: hsl(var(--accent) / 0.1);
+            color: hsl(var(--accent));
+        }
+
+        .star-rating {
+            display: inline-flex;
+            gap: 0.25rem;
+        }
+
+        .star-rating .star {
+            color: hsl(var(--muted-foreground));
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .star-rating .star:hover,
+        .star-rating .star.active {
+            color: hsl(var(--accent));
+        }
+
+        .shelf-tabs .nav-link {
+            color: hsl(var(--muted-foreground));
+            border: none;
+            border-radius: var(--radius);
+            margin-right: 0.5rem;
+        }
+
+        .shelf-tabs .nav-link.active {
+            background-color: hsl(var(--primary));
+            color: white;
+        }
+
+        .club-card {
+            transition: all 0.3s ease;
+        }
+
+        .club-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .club-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid hsl(var(--muted-foreground));
+            border-radius: 50%;
+            border-top-color: hsl(var(--primary));
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'index' %}">
+                <i class="fas fa-book-open me-2"></i>
+                Novel Net
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" href="{% url 'browse_books' %}">
+                            <i class="fas fa-th-large me-1"></i>
+                            <span class="d-none d-sm-inline">Browse Books</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" href="{% url 'shelves' %}">
+                            <i class="fas fa-bookmark me-1"></i>
+                            <span class="d-none d-sm-inline">My Shelves</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" href="{% url 'clubs_list' %}">
+                            <i class="fas fa-users me-1"></i>
+                            <span class="d-none d-sm-inline">Book Clubs</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex">
+                    {% if user.is_authenticated %}
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>
+                                {{ user.username }}
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'upload_book' %}"><i class="fas fa-upload me-2"></i>Upload Book</a></li>
+                                <li><a class="dropdown-item" href="{% url 'my_books' %}"><i class="fas fa-book me-2"></i>My Books</a></li>
+                                <li><a class="dropdown-item" href="{% url 'shelves' %}"><i class="fas fa-bookmark me-2"></i>My Shelves</a></li>
+                                <li><a class="dropdown-item" href="{% url 'clubs_list' %}"><i class="fas fa-users me-2"></i>Book Clubs</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-sign-in-alt me-1"></i>
+                            Sign In
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-top mt-5 py-4">
+        <div class="container text-center text-muted">
+            <p>&copy; 2025 Novel Net. Your personal book review & recommendation platform.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Toast notifications
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        // Star rating functionality
+        function initStarRating(container) {
+            const stars = container.querySelectorAll('.star');
+            const ratingInput = container.querySelector('input[type="hidden"]');
+            
+            stars.forEach((star, index) => {
+                star.addEventListener('click', () => {
+                    const rating = index + 1;
+                    ratingInput.value = rating;
+                    
+                    stars.forEach((s, i) => {
+                        s.classList.toggle('active', i < rating);
+                    });
+                });
+                
+                star.addEventListener('mouseenter', () => {
+                    stars.forEach((s, i) => {
+                        s.classList.toggle('active', i <= index);
+                    });
+                });
+            });
+            
+            container.addEventListener('mouseleave', () => {
+                const currentRating = parseInt(ratingInput.value) || 0;
+                stars.forEach((s, i) => {
+                    s.classList.toggle('active', i < currentRating);
+                });
+            });
+        }
+
+        // Initialize star ratings on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.star-rating').forEach(initStarRating);
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

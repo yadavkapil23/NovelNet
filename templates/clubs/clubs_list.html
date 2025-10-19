@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Book Clubs - Novel Net{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 fw-bold mb-2">Book Clubs</h2>
+            <p class="text-muted">Join book clubs and discuss your favorite books with other readers</p>
+        </div>
+        {% if user.is_authenticated %}
+        <a href="{% url 'create_club' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            Create Club
+        </a>
+        {% endif %}
+    </div>
+    
+    {% if clubs %}
+    <div class="row g-4">
+        {% for club in clubs %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ club.name }}</h5>
+                    <p class="card-text text-muted">{{ club.description|truncatechars:100 }}</p>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-primary me-2">{{ club.genre }}</span>
+                        <span class="badge bg-secondary">{{ club.meeting_frequency }}</span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between text-muted small mb-3">
+                        <span><i class="fas fa-users me-1"></i>{{ club.members.count }} members</span>
+                        <span><i class="fas fa-calendar me-1"></i>{{ club.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <img src="{% if club.created_by.profile.avatar %}{{ club.created_by.profile.avatar.url }}{% else %}https://via.placeholder.com/40{% endif %}" 
+                                 alt="{{ club.created_by.username }}" 
+                                 class="rounded-circle" 
+                                 width="40" 
+                                 height="40">
+                        </div>
+                        <div>
+                            <div class="fw-bold">{{ club.created_by.username }}</div>
+                            <div class="text-muted small">Club Creator</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'club_detail' club.id %}" class="btn btn-outline-primary flex-fill">
+                            <i class="fas fa-eye me-1"></i>
+                            View Club
+                        </a>
+                        {% if user.is_authenticated %}
+                            {% if club in user.joined_clubs.all %}
+                                <span class="btn btn-success flex-fill">
+                                    <i class="fas fa-check me-1"></i>
+                                    Joined
+                                </span>
+                            {% else %}
+                                <a href="{% url 'join_club' club.id %}" class="btn btn-primary flex-fill">
+                                    <i class="fas fa-user-plus me-1"></i>
+                                    Join
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-users fa-4x text-muted mb-4"></i>
+        <h4 class="text-muted">No Book Clubs Yet</h4>
+        <p class="text-muted">Be the first to create a book club!</p>
+        {% if user.is_authenticated %}
+        <a href="{% url 'create_club' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            Create First Club
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

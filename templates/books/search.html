@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Books - Novel Net{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold mb-3">Discover Your Next Read</h1>
+        <p class="lead text-muted">
+            Search from millions of books using Google Books
+        </p>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form method="GET" action="{% url 'book_search' %}" class="d-flex gap-3 mb-5">
+                <div class="flex-grow-1 position-relative">
+                    <i class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                    <input 
+                        type="text" 
+                        name="q" 
+                        class="form-control form-control-lg ps-5" 
+                        placeholder="Search by title, author, or ISBN..."
+                        value="{{ query }}"
+                        required
+                    >
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-search me-2"></i>
+                    Search
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {% if query %}
+    <div class="mb-4">
+        <h3>Search Results for "{{ query }}"</h3>
+        <p class="text-muted">Found {{ books|length }} books</p>
+    </div>
+
+    {% if books %}
+    <div class="row g-4">
+        {% for book in books %}
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100">
+                <div class="book-card">
+                    {% if book.volumeInfo.imageLinks.thumbnail %}
+                        <img src="{{ book.volumeInfo.imageLinks.thumbnail }}" alt="{{ book.volumeInfo.title }}" class="img-fluid">
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center h-100 bg-muted">
+                            <i class="fas fa-book fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ book.volumeInfo.title|truncatechars:40 }}</h6>
+                    {% if book.volumeInfo.authors %}
+                        <p class="card-text text-muted small">{{ book.volumeInfo.authors|join:", "|truncatechars:30 }}</p>
+                    {% endif %}
+                    {% if book.volumeInfo.averageRating %}
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="star-rating">
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star {% if forloop.counter <= book.volumeInfo.averageRating %}active{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <span class="ms-2 small text-muted">{{ book.volumeInfo.averageRating }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex gap-2">
+                        {% if user.is_authenticated %}
+                        <button class="btn btn-sm btn-outline-secondary flex-fill" onclick="addToShelf('{{ book.id }}', 'want-to-read')">
+                            <i class="fas fa-bookmark me-1"></i>
+                            Want to Read
+                        </button>
+                        {% endif %}
+                        <a href="{% url 'book_detail' book.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>
+                            Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-search fa-4x text-muted mb-4"></i>
+        <h4 class="text-muted mb-3">No books found</h4>
+        <p class="text-muted mb-4">Try a different search term or browse our recommendations</p>
+        <a href="{% url 'index' %}" class="btn btn-primary">
+            <i class="fas fa-home me-2"></i>
+            Back to Home
+        </a>
+    </div>
+    {% endif %}
+    {% else %}
+    <!-- No search query yet -->
+    <div class="text-center py-5">
+        <i class="fas fa-search fa-4x text-muted mb-4"></i>
+        <h4 class="text-muted mb-3">Start Your Search</h4>
+        <p class="text-muted mb-4">Enter a book title, author name, or ISBN to find your next great read</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addToShelf(bookId, shelfType) {
+    if (!{{ user.is_authenticated|yesno:"true,false" }}) {
+        showToast('Please sign in to add books to your shelves', 'warning');
+        return;
+    }
+
+    fetch('{% url "add_to_shelf" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            book_id: bookId,
+            shelf_type: shelfType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('An error occurred. Please try again.', 'error');
+    });
+}
+</script>
+{% endblock %}
