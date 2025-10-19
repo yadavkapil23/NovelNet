@@ -7,7 +7,7 @@ from django.core.paginator import Paginator
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout as auth_logout
 import requests
 import json
 import os
@@ -324,13 +324,20 @@ def signup(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Automatically log the user in after successful signup
-            auth_login(request, user)
-            messages.success(request, 'Your account was created successfully!')
-            return redirect('user_profile')
+            messages.success(request, 'Account created successfully. Please sign in to continue.')
+            return redirect('login')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
         form = UserCreationForm()
 
     return render(request, 'registration/signup.html', {'form': form})
+
+
+def logout_view(request):
+    """Log the user out and redirect to the home page."""
+    try:
+        auth_logout(request)
+    finally:
+        messages.success(request, 'You have been logged out.')
+        return redirect('login')

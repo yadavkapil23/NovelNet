@@ -15,4 +15,5 @@ urlpatterns = [
     path('book/<int:book_id>/download/', views.download_book, name='download_book'),
     path('profile/', views.user_profile, name='user_profile'),
     path('signup/', views.signup, name='signup'),
+    path('logout/', views.logout_view, name='logout_custom'),
 ]
