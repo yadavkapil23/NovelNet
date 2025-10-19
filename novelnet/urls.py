@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from books.views import user_profile
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -12,6 +13,7 @@ urlpatterns = [
     path('reviews/', include('reviews.urls')),
     path('clubs/', include('clubs.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('accounts/profile/', user_profile, name='profile'),
 ]
 
 if settings.DEBUG:

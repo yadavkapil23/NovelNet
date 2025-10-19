@@ -65,11 +65,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'novelnet.wsgi.application'
 
 # Database
+# Database
+import dj_database_url
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
 # Password validation
@@ -136,6 +140,11 @@ CELERY_TIMEZONE = TIME_ZONE
 
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Auth redirects
+LOGIN_REDIRECT_URL = '/accounts/profile/'
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/accounts/login/'
 
 # Logging
 LOGGING = {
