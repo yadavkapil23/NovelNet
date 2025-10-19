@@ -6,6 +6,8 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.conf import settings
 from django.db import models
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login as auth_login
 import requests
 import json
 import os
@@ -282,3 +284,53 @@ def browse_books(request):
         'selected_category': category,
     }
     return render(request, 'books/browse_books.html', context)
+
+
+@login_required
+def user_profile(request):
+    """User profile page."""
+    # Get user's uploaded books
+    uploaded_books = Book.objects.filter(uploaded_by=request.user).order_by('-created_at')
+    
+    # Get user's shelves
+    shelves_data = {
+        'currently_reading': Shelf.objects.filter(user=request.user, shelf_type='currently-reading'),
+        'want_to_read': Shelf.objects.filter(user=request.user, shelf_type='want-to-read'),
+        'read': Shelf.objects.filter(user=request.user, shelf_type='read'),
+    }
+    
+    # Get user's reviews (if reviews app is working)
+    user_reviews = []
+    try:
+        from reviews.models import Review
+        user_reviews = Review.objects.filter(user=request.user).order_by('-created_at')[:5]
+    except:
+        pass
+    
+    context = {
+        'uploaded_books': uploaded_books,
+        'shelves': shelves_data,
+        'reviews': user_reviews,
+    }
+    return render(request, 'books/user_profile.html', context)
+
+
+def signup(request):
+    """Register a new user account and log them in."""
+    if request.user.is_authenticated:
+        return redirect('user_profile')
+
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Automatically log the user in after successful signup
+            auth_login(request, user)
+            messages.success(request, 'Your account was created successfully!')
+            return redirect('user_profile')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = UserCreationForm()
+
+    return render(request, 'registration/signup.html', {'form': form})
