@@ -120,6 +120,12 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Production media file handling
+if not DEBUG:
+    # For production, you might want to use cloud storage
+    # For now, we'll serve files directly
+    pass
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
