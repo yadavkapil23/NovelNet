@@ -402,7 +402,7 @@ def send_otp_email(email, otp):
             message,
             settings.DEFAULT_FROM_EMAIL,
             [email],
-            fail_silently=False,  # Show errors for debugging
+            fail_silently=True,  # Don't show errors in production
         )
         print(f"Email sent successfully to {email}")
         return True

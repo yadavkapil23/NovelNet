@@ -12,16 +12,16 @@ services:
         value: netnovel.onrender.com
       - key: SECRET_KEY
         generateValue: true
-      # Email settings (commented out to use console backend)
-      # - key: EMAIL_HOST
-      #   value: smtp.mailgun.org
-      # - key: EMAIL_PORT
-      #   value: 587
-      # - key: EMAIL_USE_TLS
-      #   value: True
-      # - key: EMAIL_HOST_USER
-      #   value: postmaster@your-domain.mailgun.org
-      # - key: EMAIL_HOST_PASSWORD
-      #   value: your-mailgun-password
+      # Email settings for Mailgun
+      - key: EMAIL_HOST
+        value: smtp.mailgun.org
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USE_TLS
+        value: True
+      - key: EMAIL_HOST_USER
+        value: postmaster@kapil@sandbox25ef15590d3648439fa7f5a303e41feb.mailgun.org
+      - key: EMAIL_HOST_PASSWORD
+        value: your-mailgun-smtp-password
       - key: DEFAULT_FROM_EMAIL
-        value: infonovelnet@gmail.com
+        value: postmaster@kapil@sandbox25ef15590d3648439fa7f5a303e41feb.mailgun.org
