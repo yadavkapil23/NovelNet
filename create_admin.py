@@ -15,7 +15,15 @@ def create_admin():
     email = ''
     password = 'admin123'
     
-    # Create or update the requested superuser, without altering others
+    # Remove ALL existing superusers first to ensure only one admin
+    existing_superusers = User.objects.filter(is_superuser=True)
+    for user in existing_superusers:
+        user.is_superuser = False
+        user.is_staff = False
+        user.save()
+        print(f"Removed superuser status from: {user.username}")
+    
+    # Create or update the single admin user
     if User.objects.filter(username=username).exists():
         user = User.objects.get(username=username)
         user.set_password(password)
@@ -24,21 +32,26 @@ def create_admin():
         user.is_staff = True
         user.is_active = True
         user.save()
-        print(f"Updated existing user '{username}' to superuser")
+        print(f"Updated existing user '{username}' to be the ONLY superuser")
     else:
         user = User.objects.create_superuser(
             username=username,
             email=email,
             password=password
         )
-        print(f"Created new superuser '{username}'")
+        print(f"Created new superuser '{username}' as the ONLY admin")
     
-    print(f"Admin credentials:")
+    print(f"\n=== SINGLE ADMIN CREDENTIALS ===")
     print(f"Username: {username}")
     print(f"Email: {email or '(none)'}")
     print(f"Password: {password}")
-    print("\nYou can now login to /admin/ with these credentials")
-    print("IMPORTANT: Change the password immediately after first login!")
+    print(f"\nAdmin has FULL ACCESS to:")
+    print(f"- All database tables")
+    print(f"- User management (create, edit, delete users)")
+    print(f"- All app data (books, reviews, clubs, etc.)")
+    print(f"- Django admin interface at /admin/")
+    print(f"\nIMPORTANT: This is the ONLY admin account!")
+    print(f"IMPORTANT: Change the password immediately after first login!")
 
 if __name__ == "__main__":
     create_admin()

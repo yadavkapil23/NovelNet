@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Book, EmailVerification
+from .models import Book
 from django.core.exceptions import ValidationError
 
 
@@ -131,39 +131,3 @@ class CustomUserCreationForm(UserCreationForm):
         return email
 
 
-class EmailVerificationForm(forms.Form):
-    """Form for email verification with OTP."""
-    email = forms.EmailField(
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter your email address'
-        })
-    )
-    
-    def clean_email(self):
-        """Validate email and check if user already exists."""
-        email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exists():
-            raise ValidationError("A user with this email already exists.")
-        return email
-
-
-class OTPVerificationForm(forms.Form):
-    """Form for OTP verification."""
-    otp = forms.CharField(
-        max_length=6,
-        min_length=6,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control text-center',
-            'placeholder': 'Enter 6-digit OTP',
-            'maxlength': '6',
-            'pattern': '[0-9]{6}'
-        })
-    )
-    
-    def clean_otp(self):
-        """Validate OTP format."""
-        otp = self.cleaned_data.get('otp')
-        if not otp.isdigit() or len(otp) != 6:
-            raise ValidationError("OTP must be a 6-digit number.")
-        return otp

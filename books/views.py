@@ -15,8 +15,8 @@ from django.contrib.auth.models import User
 import requests
 import json
 import os
-from .models import Book, Shelf, EmailVerification
-from .forms import BookSearchForm, BookUploadForm, CustomUserCreationForm, EmailVerificationForm, OTPVerificationForm
+from .models import Book, Shelf
+from .forms import BookSearchForm, BookUploadForm, CustomUserCreationForm
 from reviews.forms import ReviewForm
 
 
@@ -320,27 +320,14 @@ def user_profile(request):
 
 
 def signup(request):
-    """Register a new user account. Email verification optional."""
+    """Register a new user account."""
     if request.user.is_authenticated:
         return redirect('user_profile')
-
-    # Use verified email if available; otherwise allow normal signup
-    verified_email = request.session.get('verified_email')
 
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            # Prefer verified email if present; else use form email (may be blank)
-            if verified_email:
-                user.email = verified_email
-            # Save user
-            user.save()
-            
-            # Clear verified email from session if it existed
-            if verified_email:
-                request.session.pop('verified_email', None)
-            
+            user = form.save()
             # Log the user in
             login(request, user)
             messages.success(request, f'Welcome to Novel Net, {user.username}! Your account has been created successfully.')
@@ -349,12 +336,8 @@ def signup(request):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = CustomUserCreationForm()
-        # Pre-fill email if available
-        if verified_email:
-            form.fields['email'].initial = verified_email
-            form.fields['email'].widget.attrs['readonly'] = True
 
-    return render(request, 'registration/signup.html', {'form': form, 'verified_email': verified_email})
+    return render(request, 'registration/signup.html', {'form': form})
 
 
 def logout_view(request):
@@ -366,183 +349,6 @@ def logout_view(request):
         return redirect('login')
 
 
-def send_otp_email(email, otp):
-    """Send OTP email to user."""
-    subject = 'Novel Net - Email Verification Code'
-    message = f'''
-    Hello!
-    
-    Thank you for registering with Novel Net. Your email verification code is:
-    
-    {otp}
-    
-    This code will expire in 10 minutes.
-    
-    If you didn't request this code, please ignore this email.
-    
-    Best regards,
-    Novel Net Team
-    '''
-    
-    try:
-        # Debug email settings
-        print(f"EMAIL_HOST: {settings.EMAIL_HOST}")
-        print(f"EMAIL_PORT: {settings.EMAIL_PORT}")
-        print(f"EMAIL_HOST_USER: {settings.EMAIL_HOST_USER}")
-        print(f"DEFAULT_FROM_EMAIL: {settings.DEFAULT_FROM_EMAIL}")
-        print(f"EMAIL_BACKEND: {settings.EMAIL_BACKEND}")
-        
-        # Check if we're using console backend
-        if settings.EMAIL_BACKEND == 'django.core.mail.backends.console.EmailBackend':
-            print("DEVELOPMENT MODE: Using console email backend. Email will be printed to terminal.")
-            print(f"OTP for {email}: {otp}")
-            # For console backend, we don't need to actually send the email
-            return True
-        
-        # Use send_mail with timeout handling
-        from django.core.mail import send_mail
-        import socket
-        socket.setdefaulttimeout(10)  # 10 second timeout
-        
-        result = send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False,  # Show errors for debugging
-        )
-        
-        if result:
-            print(f"Email sent successfully to {email}")
-            return True
-        else:
-            print(f"Failed to send email to {email}")
-            return False
-            
-    except Exception as e:
-        print(f"Error sending email to {email}: {e}")
-        print("This might be due to:")
-        print("1. Missing email credentials")
-        print("2. Gmail App Password not set up")
-        print("3. Network connectivity issues")
-        return False
-
-
-def email_verification(request):
-    """Step 1: Email verification - send OTP."""
-    if request.user.is_authenticated:
-        return redirect('user_profile')
-    
-    if request.method == 'POST':
-        form = EmailVerificationForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            
-            # Create or update OTP
-            verification, created = EmailVerification.objects.get_or_create(
-                email=email,
-                defaults={'is_verified': False}
-            )
-            
-            # Update OTP and expiry
-            verification.otp = EmailVerification.generate_otp()
-            verification.expires_at = timezone.now() + timezone.timedelta(minutes=10)
-            verification.is_verified = False
-            verification.save()
-            
-            # Debug: Print the stored OTP
-            print(f"Generated and stored OTP: {verification.otp}")
-            print(f"Expires at: {verification.expires_at}")
-            print(f"Is verified: {verification.is_verified}")
-            
-            # Send OTP email (always proceed to avoid blocking)
-            email_result = send_otp_email(email, verification.otp)
-            
-            # Always show success message and proceed
-            messages.success(request, f'Verification code sent to {email}')
-            print(f"OTP for {email}: {verification.otp}")  # Also log to console
-            print(f"Email send result: {email_result}")
-            return redirect('otp_verification', email=email)
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = EmailVerificationForm()
-    
-    return render(request, 'registration/email_verification.html', {'form': form})
-
-
-def otp_verification(request, email):
-    """Step 2: OTP verification."""
-    if request.user.is_authenticated:
-        return redirect('user_profile')
-    
-    # Get the latest verification for this email
-    try:
-        verification = EmailVerification.objects.filter(email=email).latest('created_at')
-    except EmailVerification.DoesNotExist:
-        messages.error(request, 'Invalid verification request. Please start over.')
-        return redirect('email_verification')
-    
-    if request.method == 'POST':
-        form = OTPVerificationForm(request.POST)
-        if form.is_valid():
-            otp = form.cleaned_data['otp']
-            
-            # Debug logging
-            print(f"User entered OTP: {otp}")
-            print(f"Stored OTP: {verification.otp}")
-            print(f"OTP match: {verification.otp == otp}")
-            print(f"Verification valid: {verification.is_valid()}")
-            print(f"Verification expired: {verification.is_expired()}")
-            
-            if verification.otp == otp and verification.is_valid():
-                # Mark as verified
-                verification.is_verified = True
-                verification.save()
-                
-                # Store email in session for registration
-                request.session['verified_email'] = email
-                messages.success(request, 'Email verified successfully! Please complete your registration.')
-                return redirect('signup')
-            else:
-                if verification.is_expired():
-                    messages.error(request, 'Verification code has expired. Please request a new one.')
-                    return redirect('email_verification')
-                else:
-                    messages.error(request, f'Invalid verification code. Expected: {verification.otp}, Got: {otp}')
-        else:
-            messages.error(request, 'Please enter a valid 6-digit code.')
-    else:
-        form = OTPVerificationForm()
-    
-    context = {
-        'form': form,
-        'email': email,
-        'verification': verification
-    }
-    return render(request, 'registration/otp_verification.html', context)
-
-
-def resend_otp(request, email):
-    """Resend OTP to email."""
-    try:
-        verification = EmailVerification.objects.filter(email=email).latest('created_at')
-        
-        # Generate new OTP
-        verification.otp = EmailVerification.generate_otp()
-        verification.expires_at = timezone.now() + timezone.timedelta(minutes=10)
-        verification.is_verified = False
-        verification.save()
-        
-        if send_otp_email(email, verification.otp):
-            messages.success(request, 'New verification code sent!')
-        else:
-            messages.error(request, 'Failed to send verification email. Please try again.')
-            
-    except EmailVerification.DoesNotExist:
-        messages.error(request, 'Invalid verification request.')
-    
-    return redirect('otp_verification', email=email)
 
 
 @login_required
