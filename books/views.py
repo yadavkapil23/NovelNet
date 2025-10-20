@@ -7,12 +7,16 @@ from django.core.paginator import Paginator
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import logout as auth_logout
+from django.contrib.auth import logout as auth_logout, login
+from django.contrib.admin.views.decorators import staff_member_required
+from django.core.mail import send_mail
+from django.utils import timezone
+from django.contrib.auth.models import User
 import requests
 import json
 import os
-from .models import Book, Shelf
-from .forms import BookSearchForm, BookUploadForm
+from .models import Book, Shelf, EmailVerification
+from .forms import BookSearchForm, BookUploadForm, CustomUserCreationForm, EmailVerificationForm, OTPVerificationForm
 from reviews.forms import ReviewForm
 
 
@@ -316,22 +320,41 @@ def user_profile(request):
 
 
 def signup(request):
-    """Register a new user account and log them in."""
+    """Register a new user account with email verification."""
     if request.user.is_authenticated:
         return redirect('user_profile')
 
+    # Check if email is verified
+    verified_email = request.session.get('verified_email')
+    if not verified_email:
+        messages.info(request, 'Please verify your email first.')
+        return redirect('email_verification')
+
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            messages.success(request, 'Account created successfully. Please sign in to continue.')
-            return redirect('login')
+            # Set the verified email
+            user.email = verified_email
+            user.save()
+            
+            # Clear the session
+            del request.session['verified_email']
+            
+            # Log the user in
+            login(request, user)
+            messages.success(request, f'Welcome to Novel Net, {user.username}! Your account has been created successfully.')
+            return redirect('user_profile')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
+        # Pre-fill email if available
+        if verified_email:
+            form.fields['email'].initial = verified_email
+            form.fields['email'].widget.attrs['readonly'] = True
 
-    return render(request, 'registration/signup.html', {'form': form})
+    return render(request, 'registration/signup.html', {'form': form, 'verified_email': verified_email})
 
 
 def logout_view(request):
@@ -341,3 +364,162 @@ def logout_view(request):
     finally:
         messages.success(request, 'You have been logged out.')
         return redirect('login')
+
+
+def send_otp_email(email, otp):
+    """Send OTP email to user."""
+    subject = 'Novel Net - Email Verification Code'
+    message = f'''
+    Hello!
+    
+    Thank you for registering with Novel Net. Your email verification code is:
+    
+    {otp}
+    
+    This code will expire in 10 minutes.
+    
+    If you didn't request this code, please ignore this email.
+    
+    Best regards,
+    Novel Net Team
+    '''
+    
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
+
+def email_verification(request):
+    """Step 1: Email verification - send OTP."""
+    if request.user.is_authenticated:
+        return redirect('user_profile')
+    
+    if request.method == 'POST':
+        form = EmailVerificationForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            
+            # Create or update OTP
+            verification, created = EmailVerification.objects.get_or_create(
+                email=email,
+                defaults={'is_verified': False}
+            )
+            
+            # Update OTP and expiry
+            verification.otp = EmailVerification.generate_otp()
+            verification.expires_at = timezone.now() + timezone.timedelta(minutes=10)
+            verification.is_verified = False
+            verification.save()
+            
+            # Send OTP email
+            if send_otp_email(email, verification.otp):
+                messages.success(request, f'Verification code sent to {email}')
+                return redirect('otp_verification', email=email)
+            else:
+                messages.error(request, 'Failed to send verification email. Please try again.')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = EmailVerificationForm()
+    
+    return render(request, 'registration/email_verification.html', {'form': form})
+
+
+def otp_verification(request, email):
+    """Step 2: OTP verification."""
+    if request.user.is_authenticated:
+        return redirect('user_profile')
+    
+    # Get the latest verification for this email
+    try:
+        verification = EmailVerification.objects.filter(email=email).latest('created_at')
+    except EmailVerification.DoesNotExist:
+        messages.error(request, 'Invalid verification request. Please start over.')
+        return redirect('email_verification')
+    
+    if request.method == 'POST':
+        form = OTPVerificationForm(request.POST)
+        if form.is_valid():
+            otp = form.cleaned_data['otp']
+            
+            if verification.otp == otp and verification.is_valid():
+                # Mark as verified
+                verification.is_verified = True
+                verification.save()
+                
+                # Store email in session for registration
+                request.session['verified_email'] = email
+                messages.success(request, 'Email verified successfully! Please complete your registration.')
+                return redirect('signup')
+            else:
+                if verification.is_expired():
+                    messages.error(request, 'Verification code has expired. Please request a new one.')
+                    return redirect('email_verification')
+                else:
+                    messages.error(request, 'Invalid verification code. Please try again.')
+        else:
+            messages.error(request, 'Please enter a valid 6-digit code.')
+    else:
+        form = OTPVerificationForm()
+    
+    context = {
+        'form': form,
+        'email': email,
+        'verification': verification
+    }
+    return render(request, 'registration/otp_verification.html', context)
+
+
+def resend_otp(request, email):
+    """Resend OTP to email."""
+    try:
+        verification = EmailVerification.objects.filter(email=email).latest('created_at')
+        
+        # Generate new OTP
+        verification.otp = EmailVerification.generate_otp()
+        verification.expires_at = timezone.now() + timezone.timedelta(minutes=10)
+        verification.is_verified = False
+        verification.save()
+        
+        if send_otp_email(email, verification.otp):
+            messages.success(request, 'New verification code sent!')
+        else:
+            messages.error(request, 'Failed to send verification email. Please try again.')
+            
+    except EmailVerification.DoesNotExist:
+        messages.error(request, 'Invalid verification request.')
+    
+    return redirect('otp_verification', email=email)
+
+
+@login_required
+@staff_member_required
+def users_report(request):
+    """Staff-only report of users with login/activity info."""
+    now = timezone.now()
+    seven_days_ago = now - timezone.timedelta(days=7)
+
+    users_qs = User.objects.all().order_by(models.F('last_login').desc(nulls_last=True), '-date_joined')
+
+    total_users = users_qs.count()
+    logged_in_count = users_qs.filter(last_login__isnull=False).count()
+    joined_last_7_days = users_qs.filter(date_joined__gte=seven_days_ago).count()
+    active_last_7_days = users_qs.filter(last_login__gte=seven_days_ago).count()
+
+    context = {
+        'users': users_qs,
+        'total_users': total_users,
+        'logged_in_count': logged_in_count,
+        'joined_last_7_days': joined_last_7_days,
+        'active_last_7_days': active_last_7_days,
+    }
+    return render(request, 'books/users_report.html', context)
