@@ -427,6 +427,11 @@ def email_verification(request):
             verification.is_verified = False
             verification.save()
             
+            # Debug: Print the stored OTP
+            print(f"Generated and stored OTP: {verification.otp}")
+            print(f"Expires at: {verification.expires_at}")
+            print(f"Is verified: {verification.is_verified}")
+            
             # Send OTP email (always proceed to avoid blocking)
             send_otp_email(email, verification.otp)
             
@@ -459,6 +464,13 @@ def otp_verification(request, email):
         if form.is_valid():
             otp = form.cleaned_data['otp']
             
+            # Debug logging
+            print(f"User entered OTP: {otp}")
+            print(f"Stored OTP: {verification.otp}")
+            print(f"OTP match: {verification.otp == otp}")
+            print(f"Verification valid: {verification.is_valid()}")
+            print(f"Verification expired: {verification.is_expired()}")
+            
             if verification.otp == otp and verification.is_valid():
                 # Mark as verified
                 verification.is_verified = True
@@ -473,7 +485,7 @@ def otp_verification(request, email):
                     messages.error(request, 'Verification code has expired. Please request a new one.')
                     return redirect('email_verification')
                 else:
-                    messages.error(request, 'Invalid verification code. Please try again.')
+                    messages.error(request, f'Invalid verification code. Expected: {verification.otp}, Got: {otp}')
         else:
             messages.error(request, 'Please enter a valid 6-digit code.')
     else:
