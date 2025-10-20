@@ -16,4 +16,9 @@ urlpatterns = [
     path('profile/', views.user_profile, name='user_profile'),
     path('signup/', views.signup, name='signup'),
     path('logout/', views.logout_view, name='logout_custom'),
+    path('reports/users/', views.users_report, name='users_report'),
+    # Email verification URLs
+    path('email-verification/', views.email_verification, name='email_verification'),
+    path('otp-verification/<str:email>/', views.otp_verification, name='otp_verification'),
+    path('resend-otp/<str:email>/', views.resend_otp, name='resend_otp'),
 ]
