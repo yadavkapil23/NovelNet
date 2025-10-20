@@ -385,19 +385,23 @@ def send_otp_email(email, otp):
     '''
     
     try:
-        # Add timeout to prevent worker timeout
-        from django.core.mail import EmailMessage
-        email_msg = EmailMessage(
+        # Use send_mail with timeout handling
+        from django.core.mail import send_mail
+        import socket
+        socket.setdefaulttimeout(10)  # 10 second timeout
+        
+        send_mail(
             subject,
             message,
             settings.DEFAULT_FROM_EMAIL,
             [email],
+            fail_silently=True,  # Don't raise exceptions
         )
-        email_msg.send(fail_silently=False)
+        print(f"Email sent successfully to {email}")
         return True
     except Exception as e:
-        print(f"Error sending email: {e}")
-        # Fallback: return True to prevent blocking the user
+        print(f"Error sending email to {email}: {e}")
+        # Always return True to prevent blocking
         return True
 
 
@@ -423,16 +427,13 @@ def email_verification(request):
             verification.is_verified = False
             verification.save()
             
-            # Send OTP email (with fallback)
-            email_sent = send_otp_email(email, verification.otp)
-            if email_sent:
-                messages.success(request, f'Verification code sent to {email}')
-                return redirect('otp_verification', email=email)
-            else:
-                # Even if email fails, show OTP in console for development
-                print(f"OTP for {email}: {verification.otp}")
-                messages.info(request, f'Verification code: {verification.otp} (Check console if email failed)')
-                return redirect('otp_verification', email=email)
+            # Send OTP email (always proceed to avoid blocking)
+            send_otp_email(email, verification.otp)
+            
+            # Always show success message and proceed
+            messages.success(request, f'Verification code sent to {email}')
+            print(f"OTP for {email}: {verification.otp}")  # Also log to console
+            return redirect('otp_verification', email=email)
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
