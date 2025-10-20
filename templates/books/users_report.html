@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Users Report - Novel Net{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="mb-0">Users Report</h2>
+        <a href="{% url 'admin:index' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-cog me-1"></i> Admin
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted">Total Users</div>
+                    <div class="h4 mb-0">{{ total_users }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted">Users Ever Logged In</div>
+                    <div class="h4 mb-0">{{ logged_in_count }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted">Joined Last 7 Days</div>
+                    <div class="h4 mb-0">{{ joined_last_7_days }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted">Active Last 7 Days</div>
+                    <div class="h4 mb-0">{{ active_last_7_days }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Date Joined</th>
+                            <th>Last Login</th>
+                            <th>Is Staff</th>
+                            <th>Is Active</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u.username }}</td>
+                            <td>{{ u.email|default:'-' }}</td>
+                            <td>{{ u.date_joined|date:'Y-m-d H:i' }}</td>
+                            <td>{% if u.last_login %}{{ u.last_login|date:'Y-m-d H:i' }}{% else %}-{% endif %}</td>
+                            <td>{% if u.is_staff %}<span class="badge bg-primary">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td>
+                            <td>{% if u.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Disabled</span>{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No users found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
