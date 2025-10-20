@@ -392,25 +392,40 @@ def send_otp_email(email, otp):
         print(f"DEFAULT_FROM_EMAIL: {settings.DEFAULT_FROM_EMAIL}")
         print(f"EMAIL_BACKEND: {settings.EMAIL_BACKEND}")
         
+        # Check if we're using console backend
+        if settings.EMAIL_BACKEND == 'django.core.mail.backends.console.EmailBackend':
+            print("DEVELOPMENT MODE: Using console email backend. Email will be printed to terminal.")
+            print(f"OTP for {email}: {otp}")
+            # For console backend, we don't need to actually send the email
+            return True
+        
         # Use send_mail with timeout handling
         from django.core.mail import send_mail
         import socket
         socket.setdefaulttimeout(10)  # 10 second timeout
         
-        send_mail(
+        result = send_mail(
             subject,
             message,
             settings.DEFAULT_FROM_EMAIL,
             [email],
-            fail_silently=True,  # Don't show errors in production
+            fail_silently=False,  # Show errors for debugging
         )
-        print(f"Email sent successfully to {email}")
-        return True
+        
+        if result:
+            print(f"Email sent successfully to {email}")
+            return True
+        else:
+            print(f"Failed to send email to {email}")
+            return False
+            
     except Exception as e:
         print(f"Error sending email to {email}: {e}")
-        print(f"Exception type: {type(e)}")
-        # Always return True to prevent blocking
-        return True
+        print("This might be due to:")
+        print("1. Missing email credentials")
+        print("2. Gmail App Password not set up")
+        print("3. Network connectivity issues")
+        return False
 
 
 def email_verification(request):
