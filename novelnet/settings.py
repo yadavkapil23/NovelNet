@@ -155,7 +155,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
-# Email Configuration (auto-fallback to console in dev if creds missing)
+# Email Configuration
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
@@ -163,10 +163,13 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@novelnet.com')
 
-# If SMTP creds not provided, use console backend (free/dev). Otherwise use SMTP.
-if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+# Email backend configuration
+if DEBUG:
+    # In development, always use console backend for simplicity
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    print("DEVELOPMENT MODE: Using console email backend. Emails will be printed to terminal.")
 else:
+    # In production, use SMTP with proper credentials
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # Auth redirects

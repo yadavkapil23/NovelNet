@@ -3,7 +3,7 @@ services:
     name: novelnet
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python create_admin.py
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
     startCommand: gunicorn novelnet.wsgi
     envVars:
       - key: DEBUG
@@ -12,16 +12,16 @@ services:
         value: netnovel.onrender.com
       - key: SECRET_KEY
         generateValue: true
-      # Email settings for Mailgun
+      # Email settings for Gmail SMTP
       - key: EMAIL_HOST
-        value: smtp.mailgun.org
+        value: smtp.gmail.com
       - key: EMAIL_PORT
         value: 587
       - key: EMAIL_USE_TLS
         value: True
       - key: EMAIL_HOST_USER
-        value: postmaster@kapil@sandbox25ef15590d3648439fa7f5a303e41feb.mailgun.org
+        value: infonovelnet@gmail.com
       - key: EMAIL_HOST_PASSWORD
-        value: your-mailgun-smtp-password
+        value: xerxwspajazaizrq
       - key: DEFAULT_FROM_EMAIL
-        value: postmaster@kapil@sandbox25ef15590d3648439fa7f5a303e41feb.mailgun.org
+        value: infonovelnet@gmail.com
