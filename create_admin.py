@@ -10,16 +10,12 @@ django.setup()
 def create_admin():
     User = get_user_model()
     
-    # Admin credentials
-    username = 'novelnet'
-    email = 'infonovelnet@gmail.com'
-    password = 'novelnet@2787'
+    # Admin credentials (as requested)
+    username = 'admin'
+    email = ''
+    password = 'admin123'
     
-    # Remove any existing superusers first
-    User.objects.filter(is_superuser=True).update(is_superuser=False, is_staff=False)
-    print("Removed all existing superusers")
-    
-    # Create new superuser
+    # Create or update the requested superuser, without altering others
     if User.objects.filter(username=username).exists():
         user = User.objects.get(username=username)
         user.set_password(password)
@@ -39,7 +35,7 @@ def create_admin():
     
     print(f"Admin credentials:")
     print(f"Username: {username}")
-    print(f"Email: {email}")
+    print(f"Email: {email or '(none)'}")
     print(f"Password: {password}")
     print("\nYou can now login to /admin/ with these credentials")
     print("IMPORTANT: Change the password immediately after first login!")
