@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-"""
-Create a new superuser for Django admin
-"""
+
 import os
 import django
 from django.contrib.auth import get_user_model
