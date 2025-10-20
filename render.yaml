@@ -12,16 +12,16 @@ services:
         value: netnovel.onrender.com
       - key: SECRET_KEY
         generateValue: true
-      # Email settings (comment out to use console backend)
-      # - key: EMAIL_HOST
-      #   value: smtp.gmail.com
-      # - key: EMAIL_PORT
-      #   value: 587
-      # - key: EMAIL_USE_TLS
-      #   value: True
-      # - key: EMAIL_HOST_USER
-      #   value: your-email@gmail.com
-      # - key: EMAIL_HOST_PASSWORD
-      #   value: your-app-password
+      # Email settings for Gmail SMTP
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USE_TLS
+        value: True
+      - key: EMAIL_HOST_USER
+        value: infonovelnet@gmail.com
+      - key: EMAIL_HOST_PASSWORD
+        value: ikxtcwpbjaqtipuh
       - key: DEFAULT_FROM_EMAIL
         value: infonovelnet@gmail.com
