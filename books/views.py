@@ -320,26 +320,26 @@ def user_profile(request):
 
 
 def signup(request):
-    """Register a new user account with email verification."""
+    """Register a new user account. Email verification optional."""
     if request.user.is_authenticated:
         return redirect('user_profile')
 
-    # Check if email is verified
+    # Use verified email if available; otherwise allow normal signup
     verified_email = request.session.get('verified_email')
-    if not verified_email:
-        messages.info(request, 'Please verify your email first.')
-        return redirect('email_verification')
 
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            # Set the verified email
-            user.email = verified_email
+            user = form.save(commit=False)
+            # Prefer verified email if present; else use form email (may be blank)
+            if verified_email:
+                user.email = verified_email
+            # Save user
             user.save()
             
-            # Clear the session
-            del request.session['verified_email']
+            # Clear verified email from session if it existed
+            if verified_email:
+                request.session.pop('verified_email', None)
             
             # Log the user in
             login(request, user)

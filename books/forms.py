@@ -91,12 +91,12 @@ class BookUploadForm(forms.ModelForm):
 
 
 class CustomUserCreationForm(UserCreationForm):
-    """Custom user creation form with email field."""
+    """Custom user creation form with optional email field."""
     email = forms.EmailField(
-        required=True,
+        required=False,
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Enter your email address'
+            'placeholder': 'Enter your email address (optional)'
         })
     )
     
@@ -122,8 +122,10 @@ class CustomUserCreationForm(UserCreationForm):
         })
     
     def clean_email(self):
-        """Validate email uniqueness."""
+        """Validate email uniqueness if provided; allow blank emails."""
         email = self.cleaned_data.get('email')
+        if not email:
+            return ''
         if User.objects.filter(email=email).exists():
             raise ValidationError("A user with this email already exists.")
         return email
