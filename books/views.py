@@ -385,6 +385,13 @@ def send_otp_email(email, otp):
     '''
     
     try:
+        # Debug email settings
+        print(f"EMAIL_HOST: {settings.EMAIL_HOST}")
+        print(f"EMAIL_PORT: {settings.EMAIL_PORT}")
+        print(f"EMAIL_HOST_USER: {settings.EMAIL_HOST_USER}")
+        print(f"DEFAULT_FROM_EMAIL: {settings.DEFAULT_FROM_EMAIL}")
+        print(f"EMAIL_BACKEND: {settings.EMAIL_BACKEND}")
+        
         # Use send_mail with timeout handling
         from django.core.mail import send_mail
         import socket
@@ -395,12 +402,13 @@ def send_otp_email(email, otp):
             message,
             settings.DEFAULT_FROM_EMAIL,
             [email],
-            fail_silently=True,  # Don't raise exceptions
+            fail_silently=False,  # Show errors for debugging
         )
         print(f"Email sent successfully to {email}")
         return True
     except Exception as e:
         print(f"Error sending email to {email}: {e}")
+        print(f"Exception type: {type(e)}")
         # Always return True to prevent blocking
         return True
 
@@ -433,11 +441,12 @@ def email_verification(request):
             print(f"Is verified: {verification.is_verified}")
             
             # Send OTP email (always proceed to avoid blocking)
-            send_otp_email(email, verification.otp)
+            email_result = send_otp_email(email, verification.otp)
             
             # Always show success message and proceed
             messages.success(request, f'Verification code sent to {email}')
             print(f"OTP for {email}: {verification.otp}")  # Also log to console
+            print(f"Email send result: {email_result}")
             return redirect('otp_verification', email=email)
         else:
             messages.error(request, 'Please correct the errors below.')
