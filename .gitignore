@@ -130,6 +130,7 @@ tsconfig.node.json
 vite.config.ts
 bun.lockb
 create_superuser.py
+create_admin.py
 # Sample data scripts
 add_sample_books.py
 test_*.py
