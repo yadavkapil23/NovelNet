@@ -32,7 +32,7 @@ A comprehensive Django-based book review and recommendation platform that allows
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone
    cd novel-net
    ```
 
