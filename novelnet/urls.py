@@ -7,6 +7,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from books.views import user_profile, logout_view
 
+# Customize Django Admin titles
+admin.site.site_header = "Novel Net"  # Removes "Django administration" text
+admin.site.site_title = "Novel Net Admin"  # Changes browser tab title
+admin.site.index_title = "Welcome to Novel Net"  # Changes admin index page title
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('books.urls')),
