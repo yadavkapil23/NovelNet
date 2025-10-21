@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Account - Novel Net{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white text-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Delete Account
+                    </h3>
+                    <p class="mb-0">This action cannot be undone</p>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-warning me-2"></i>
+                            Warning: Permanent Account Deletion
+                        </h5>
+                        <p class="mb-0">
+                            Deleting your account will permanently remove:
+                        </p>
+                        <ul class="mb-0 mt-2">
+                            <li>Your user profile and account information</li>
+                            <li>All books you have uploaded</li>
+                            <li>All your book reviews and ratings</li>
+                            <li>Your reading shelves and progress</li>
+                            <li>Your participation in book clubs</li>
+                            <li>All other data associated with your account</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" id="deleteAccountForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="confirm_username" class="form-label">
+                                <strong>Confirm your username:</strong>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="confirm_username" 
+                                   id="confirm_username" 
+                                   placeholder="Type your username here"
+                                   required>
+                            <div class="form-text">
+                                Current username: <strong>{{ user.username }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="confirm_text" class="form-label">
+                                <strong>Type the following text to confirm:</strong>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="confirm_text" 
+                                   id="confirm_text" 
+                                   placeholder="delete my account"
+                                   required>
+                            <div class="form-text">
+                                Type exactly: <strong>"delete my account"</strong>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" 
+                                    class="btn btn-danger btn-lg" 
+                                    id="deleteButton"
+                                    disabled>
+                                <i class="fas fa-trash me-2"></i>
+                                Permanently Delete My Account
+                            </button>
+                            <a href="{% url 'user_profile' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Cancel and Return to Profile
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const usernameInput = document.getElementById('confirm_username');
+    const textInput = document.getElementById('confirm_text');
+    const deleteButton = document.getElementById('deleteButton');
+    const form = document.getElementById('deleteAccountForm');
+    
+    const currentUsername = '{{ user.username }}';
+    const requiredText = 'delete my account';
+    
+    function validateInputs() {
+        const usernameMatch = usernameInput.value.trim() === currentUsername;
+        const textMatch = textInput.value.trim().toLowerCase() === requiredText;
+        
+        deleteButton.disabled = !(usernameMatch && textMatch);
+    }
+    
+    usernameInput.addEventListener('input', validateInputs);
+    textInput.addEventListener('input', validateInputs);
+    
+    // Add confirmation dialog
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (confirm('Are you absolutely sure you want to delete your account? This action cannot be undone!')) {
+            if (confirm('This is your final warning. Your account and all data will be permanently deleted. Continue?')) {
+                form.submit();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
