@@ -22,6 +22,6 @@ services:
       - key: EMAIL_HOST_USER
         value: infonovelnet@gmail.com
       - key: EMAIL_HOST_PASSWORD
-        value: xerxwspajazaizrq
+        value: NOTHING
       - key: DEFAULT_FROM_EMAIL
         value: infonovelnet@gmail.com
