@@ -82,9 +82,7 @@
 
                 {% if book.categories %}
                     <div class="d-flex flex-wrap gap-2 mb-4">
-                        {% for category in book.categories %}
-                            <span class="badge bg-primary">{{ category }}</span>
-                        {% endfor %}
+                        <span class="badge bg-primary">{{ book.categories|truncatechars:50 }}</span>
                     </div>
                 {% endif %}
             </div>
