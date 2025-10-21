@@ -68,7 +68,11 @@ def book_search(request):
     if request.method == 'GET':
         query = request.GET.get('q', '')
         if query:
+            print(f"Searching for: {query}")
             books = search_books_on_google(query)
+            print(f"Found {len(books)} books")
+            if books:
+                print(f"First book: {books[0].get('title', 'No title')}")
             return render(request, 'books/search.html', {'books': books, 'query': query})
     
     return render(request, 'books/search.html')
@@ -139,36 +143,134 @@ def search_books_on_google(query, max_results=12):
         url = "https://www.googleapis.com/books/v1/volumes"
         params = {
             'q': query,
-            'maxResults': max_results
+            'maxResults': max_results,
+            'printType': 'books',  # Only books, not magazines
+            'orderBy': 'relevance'  # Most relevant results first
         }
-        response = requests.get(url, params=params)
+        
+        # Add API key if available
+        api_key = settings.GOOGLE_BOOKS_API_KEY
+        if api_key:
+            params['key'] = api_key
+        
+        response = requests.get(url, params=params, timeout=10)
+        
         if response.status_code == 200:
             data = response.json()
-            return data.get('items', [])
+            books = data.get('items', [])
+            
+            # Process and enhance book data
+            processed_books = []
+            for book in books:
+                processed_book = process_google_book_data(book)
+                if processed_book:
+                    processed_books.append(processed_book)
+            
+            return processed_books
+        else:
+            print(f"Google Books API error: {response.status_code} - {response.text}")
+            
+    except requests.exceptions.Timeout:
+        print("Google Books API request timed out")
+    except requests.exceptions.RequestException as e:
+        print(f"Network error searching books: {e}")
     except Exception as e:
         print(f"Error searching books: {e}")
+    
     return []
+
+
+def process_google_book_data(book_data):
+    """Process and enhance Google Books API data."""
+    volume_info = book_data.get('volumeInfo', {})
+    
+    # Extract and clean data
+    title = volume_info.get('title', '').strip()
+    if not title:
+        return None
+    
+    authors = volume_info.get('authors', [])
+    if isinstance(authors, list):
+        authors = ', '.join(authors)
+    
+    categories = volume_info.get('categories', [])
+    if isinstance(categories, list):
+        categories = ', '.join(categories)
+    
+    # Get better image URL
+    image_links = volume_info.get('imageLinks', {})
+    thumbnail_url = image_links.get('thumbnail', '') or image_links.get('smallThumbnail', '')
+    
+    # Clean description
+    description = volume_info.get('description', '')
+    if description and len(description) > 1000:
+        description = description[:1000] + '...'
+    
+    return {
+        'google_id': book_data.get('id'),
+        'title': title,
+        'authors': authors,
+        'description': description,
+        'published_date': volume_info.get('publishedDate', ''),
+        'page_count': volume_info.get('pageCount'),
+        'categories': categories,
+        'average_rating': volume_info.get('averageRating'),
+        'thumbnail_url': thumbnail_url,
+        'preview_link': volume_info.get('previewLink', ''),
+        'info_link': volume_info.get('infoLink', ''),
+        'language': volume_info.get('language', 'en'),
+        'publisher': volume_info.get('publisher', ''),
+        'isbn_10': None,
+        'isbn_13': None,
+    }
 
 
 def create_book_from_google_data(book_data):
     """Create Book instance from Google Books API data."""
-    volume_info = book_data.get('volumeInfo', {})
+    processed_data = process_google_book_data(book_data)
+    if not processed_data:
+        return None
     
     book, created = Book.objects.get_or_create(
-        google_id=book_data.get('id'),
+        google_id=processed_data['google_id'],
         defaults={
-            'title': volume_info.get('title', ''),
-            'authors': volume_info.get('authors', []),
-            'description': volume_info.get('description', ''),
-            'published_date': volume_info.get('publishedDate', ''),
-            'page_count': volume_info.get('pageCount'),
-            'categories': volume_info.get('categories', []),
-            'average_rating': volume_info.get('averageRating'),
-            'thumbnail_url': volume_info.get('imageLinks', {}).get('thumbnail', ''),
+            'title': processed_data['title'],
+            'authors': processed_data['authors'],
+            'description': processed_data['description'],
+            'published_date': processed_data['published_date'],
+            'page_count': processed_data['page_count'],
+            'categories': processed_data['categories'],
+            'average_rating': processed_data['average_rating'],
+            'thumbnail_url': processed_data['thumbnail_url'],
+            'book_type': 'external',
         }
     )
     
     return book
+
+
+@login_required
+def import_google_book(request, google_id):
+    """Import a book from Google Books to local database."""
+    try:
+        # Fetch book details from Google Books
+        book_data = fetch_book_from_google(google_id)
+        if not book_data:
+            messages.error(request, 'Book not found in Google Books.')
+            return redirect('book_search')
+        
+        # Create book in local database
+        book = create_book_from_google_data(book_data)
+        if book:
+            messages.success(request, f'Book "{book.title}" imported successfully!')
+            return redirect('book_detail', book_id=book.id)
+        else:
+            messages.error(request, 'Failed to import book.')
+            return redirect('book_search')
+            
+    except Exception as e:
+        messages.error(request, f'Error importing book: {str(e)}')
+        return redirect('book_search')
 
 
 @login_required
@@ -253,8 +355,9 @@ def delete_book(request, book_id):
 
 
 def browse_books(request):
-    """Browse all public books."""
+    """Browse all public books with Google Books search integration."""
     books = Book.objects.filter(is_public=True, book_type='user_uploaded').order_by('-created_at')
+    google_books = []
     
     # Filter by category if provided
     category = request.GET.get('category')
@@ -264,11 +367,18 @@ def browse_books(request):
     # Search functionality
     search_query = request.GET.get('q')
     if search_query:
+        # First search local books
         books = books.filter(
             models.Q(title__icontains=search_query) |
             models.Q(authors__icontains=search_query) |
             models.Q(description__icontains=search_query)
         )
+        
+        # If no local results, search Google Books
+        if not books.exists():
+            print(f"No local books found for '{search_query}', searching Google Books...")
+            google_books = search_books_on_google(search_query, 12)
+            print(f"Found {len(google_books)} Google Books results")
     
     paginator = Paginator(books, 12)
     page_number = request.GET.get('page')
@@ -283,9 +393,11 @@ def browse_books(request):
     
     context = {
         'books': books,
+        'google_books': google_books,
         'categories': categories,
         'search_query': search_query,
         'selected_category': category,
+        'has_google_results': len(google_books) > 0,
     }
     return render(request, 'books/browse_books.html', context)
 
@@ -373,3 +485,41 @@ def users_report(request):
         'active_last_7_days': active_last_7_days,
     }
     return render(request, 'books/users_report.html', context)
+
+
+@login_required
+def delete_account(request):
+    """Allow users to delete their own account."""
+    if request.method == 'POST':
+        # Get confirmation data
+        confirm_username = request.POST.get('confirm_username', '').strip()
+        confirm_text = request.POST.get('confirm_text', '').strip()
+        
+        # Validate confirmation
+        if confirm_username != request.user.username:
+            messages.error(request, 'Username confirmation does not match.')
+            return render(request, 'books/delete_account.html')
+        
+        if confirm_text.lower() != 'delete my account':
+            messages.error(request, 'Please type "delete my account" exactly as shown.')
+            return render(request, 'books/delete_account.html')
+        
+        # Store username for logout message
+        username = request.user.username
+        
+        # Delete user account (this will cascade delete related data)
+        request.user.delete()
+        
+        # Logout the user
+        auth_logout(request)
+        
+        messages.success(request, f'Account "{username}" has been permanently deleted.')
+        return redirect('index')
+    
+    return render(request, 'books/delete_account.html')
+
+
+@login_required
+def delete_account_confirm(request):
+    """Show account deletion confirmation page."""
+    return render(request, 'books/delete_account.html')
