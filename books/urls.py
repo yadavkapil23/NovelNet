@@ -17,4 +17,8 @@ urlpatterns = [
     path('signup/', views.signup, name='signup'),
     path('logout/', views.logout_view, name='logout_custom'),
     path('reports/users/', views.users_report, name='users_report'),
+    # Account management
+    path('delete-account/', views.delete_account, name='delete_account'),
+    # Google Books integration
+    path('import-google-book/<str:google_id>/', views.import_google_book, name='import_google_book'),
 ]
