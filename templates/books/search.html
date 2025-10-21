@@ -42,45 +42,58 @@
     {% if books %}
     <div class="row g-4">
         {% for book in books %}
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100">
-                <div class="book-card">
-                    {% if book.volumeInfo.imageLinks.thumbnail %}
-                        <img src="{{ book.volumeInfo.imageLinks.thumbnail }}" alt="{{ book.volumeInfo.title }}" class="img-fluid">
+        <div class="col-md-4 col-lg-3 col-sm-6">
+            <div class="card h-100 shadow-sm">
+                <div class="book-card" style="height: 200px; overflow: hidden;">
+                    {% if book.thumbnail_url %}
+                        <img src="{{ book.thumbnail_url }}" alt="{{ book.title }}" class="img-fluid w-100 h-100" style="object-fit: cover;">
                     {% else %}
-                        <div class="d-flex align-items-center justify-content-center h-100 bg-muted">
+                        <div class="d-flex align-items-center justify-content-center h-100 bg-light">
                             <i class="fas fa-book fa-3x text-muted"></i>
                         </div>
                     {% endif %}
                 </div>
-                <div class="card-body">
-                    <h6 class="card-title">{{ book.volumeInfo.title|truncatechars:40 }}</h6>
-                    {% if book.volumeInfo.authors %}
-                        <p class="card-text text-muted small">{{ book.volumeInfo.authors|join:", "|truncatechars:30 }}</p>
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">{{ book.title|truncatechars:50 }}</h6>
+                    {% if book.authors %}
+                        <p class="card-text text-muted small mb-2">{{ book.authors|truncatechars:40 }}</p>
                     {% endif %}
-                    {% if book.volumeInfo.averageRating %}
+                    {% if book.average_rating %}
                         <div class="d-flex align-items-center mb-2">
                             <div class="star-rating">
                                 {% for i in "12345" %}
-                                    <i class="fas fa-star {% if forloop.counter <= book.volumeInfo.averageRating %}active{% endif %}"></i>
+                                    <i class="fas fa-star {% if forloop.counter <= book.average_rating %}text-warning{% else %}text-muted{% endif %}"></i>
                                 {% endfor %}
                             </div>
-                            <span class="ms-2 small text-muted">{{ book.volumeInfo.averageRating }}</span>
+                            <span class="ms-2 small text-muted">{{ book.average_rating|floatformat:1 }}</span>
                         </div>
+                    {% endif %}
+                    {% if book.published_date %}
+                        <p class="small text-muted mb-2">{{ book.published_date }}</p>
+                    {% endif %}
+                    {% if book.description %}
+                        <p class="card-text small text-muted flex-grow-1">{{ book.description|truncatechars:100 }}</p>
                     {% endif %}
                 </div>
                 <div class="card-footer bg-transparent">
                     <div class="d-flex gap-2">
                         {% if user.is_authenticated %}
-                        <button class="btn btn-sm btn-outline-secondary flex-fill" onclick="addToShelf('{{ book.id }}', 'want-to-read')">
-                            <i class="fas fa-bookmark me-1"></i>
-                            Want to Read
+                        <a href="{% url 'import_google_book' book.google_id %}" class="btn btn-sm btn-primary flex-fill">
+                            <i class="fas fa-download me-1"></i>
+                            Import
+                        </a>
+                        {% else %}
+                        <button class="btn btn-sm btn-outline-primary flex-fill" onclick="alert('Please sign in to import books')">
+                            <i class="fas fa-download me-1"></i>
+                            Import
                         </button>
                         {% endif %}
-                        <button class="btn btn-sm btn-outline-primary" onclick="alert('Google Books integration coming soon!')">
-                            <i class="fas fa-eye me-1"></i>
-                            Details
-                        </button>
+                        {% if book.info_link %}
+                        <a href="{{ book.info_link }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-external-link-alt me-1"></i>
+                            View
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
