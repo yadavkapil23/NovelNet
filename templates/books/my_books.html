@@ -37,9 +37,7 @@
                     
                     {% if book.categories %}
                         <div class="mb-2">
-                            {% for category in book.categories|slice:":2" %}
-                                <span class="badge bg-primary me-1">{{ category }}</span>
-                            {% endfor %}
+                            <span class="badge bg-primary me-1">{{ book.categories|truncatechars:30 }}</span>
                         </div>
                     {% endif %}
                     
