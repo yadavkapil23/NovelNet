@@ -120,11 +120,25 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# S3 / Supabase Storage Settings
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='media')
+AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='')
+AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None # Supabase handles ACLs at bucket level
+AWS_S3_VERIFY = True
+AWS_QUERYSTRING_AUTH = False
+
 # Production media file handling
-if not DEBUG:
-    # For production, you might want to use cloud storage
-    # For now, we'll serve files directly
-    pass
+if not DEBUG and AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
+    # Use Supabase Storage for files in production
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    # Media URL should point to the S3 bucket if not using a custom domain
+    # However, django-storages handles this.
+else:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

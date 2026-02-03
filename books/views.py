@@ -301,15 +301,14 @@ def download_book(request, book_id):
     # Increment download count
     book.increment_download_count()
     
-    # Serve the file
-    file_path = book.book_file.path
-    if os.path.exists(file_path):
-        with open(file_path, 'rb') as f:
-            response = HttpResponse(f.read(), content_type='application/octet-stream')
-            response['Content-Disposition'] = f'attachment; filename="{book.title}.{book.book_file.name.split(".")[-1]}"'
-            return response
-    else:
-        raise Http404("Book file not found")
+    # Serve the file from any storage (local or cloud)
+    try:
+        response = HttpResponse(book.book_file.open('rb'), content_type='application/octet-stream')
+        file_extension = book.book_file.name.split('.')[-1]
+        response['Content-Disposition'] = f'attachment; filename="{book.title}.{file_extension}"'
+        return response
+    except Exception as e:
+        raise Http404(f"Book file not found or inaccessible: {str(e)}")
 
 
 @login_required
