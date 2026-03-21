@@ -3,7 +3,6 @@
 A comprehensive Django-based book review and recommendation platform that allows users to discover, share, and discuss books with a community of book lovers.
 
 ## Features
-
 - **Book Discovery**: Browse and search through a vast collection of books
 - **Personal Libraries**: Create and manage your own book collections with custom shelves
 - **Reviews & Ratings**: Share your thoughts and read reviews from other users
