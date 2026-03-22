@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import Book, Shelf, UserProfile
 
-
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
     list_display = ['title', 'author_names', 'published_date', 'average_rating', 'created_at']
