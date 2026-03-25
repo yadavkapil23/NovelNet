@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import BookClub, ClubMembership, ClubDiscussion
 
-
 @admin.register(BookClub)
 class BookClubAdmin(admin.ModelAdmin):
     list_display = ['name', 'created_by', 'member_count', 'created_at']
@@ -9,7 +8,6 @@ class BookClubAdmin(admin.ModelAdmin):
     search_fields = ['name', 'description', 'created_by__username']
     readonly_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
-
 
 @admin.register(ClubMembership)
 class ClubMembershipAdmin(admin.ModelAdmin):
